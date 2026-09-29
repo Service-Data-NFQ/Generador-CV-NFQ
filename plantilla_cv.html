@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <style>
+        /* Formato A4 Vertical sin márgenes para cubrir la página */
+        @page {
+            size: A4 portrait;
+            margin: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            color: #333;
+            font-size: 9.5pt;
+            line-height: 1.4;
+            background-color: #fff;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        .page-container {
+            display: flex;
+            width: 100%;
+            min-height: 100vh;
+        }
+
+        /* ================== COLUMNA IZQUIERDA ================== */
+        .left-column {
+            width: 65%;
+            padding: 35px 30px;
+            background-color: #ffffff;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+
+        .header-left {
+            flex-grow: 1;
+        }
+
+        .header-left h1 {
+            margin: 0;
+            font-size: 20pt;
+            color: #55555e;
+            font-weight: 300;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .exp-text {
+            font-size: 9.5pt;
+        }
+
+        .exp-label {
+            color: #3b9eeb;
+            font-weight: normal;
+        }
+
+        .exp-value {
+            color: #000;
+            font-weight: bold;
+        }
+
+        .logo-img {
+            height: 38px;
+        }
+
+        .title-left {
+            font-size: 11pt;
+            font-weight: normal;
+            color: #555;
+            text-transform: uppercase;
+            border-bottom: 1px solid #777;
+            padding-bottom: 5px;
+            margin-top: 25px;
+            margin-bottom: 15px;
+        }
+
+        .job {
+            margin-bottom: 18px;
+            page-break-inside: avoid;
+        }
+
+        .job-resumen {
+            color: #666;
+            font-size: 8.5pt;
+            margin-bottom: 2px;
+        }
+
+        .job-title {
+            font-weight: bold;
+            color: #444;
+            font-size: 9.5pt;
+        }
+
+        .job-meta {
+            color: #777;
+            font-size: 8.5pt;
+            font-style: italic;
+            margin-bottom: 5px;
+        }
+
+        .job-desc {
+            padding-left: 18px;
+            margin: 0;
+        }
+
+        .job-desc li {
+            margin-bottom: 3px;
+        }
+
+        /* Línea de tiempo Educación */
+        .edu-container {
+            margin-top: 15px;
+        }
+
+        .edu-item {
+            display: flex;
+            page-break-inside: avoid;
+        }
+
+        .edu-date-left {
+            width: 90px;
+            font-size: 8.5pt;
+            color: #777;
+            text-align: right;
+            padding-right: 10px;
+            padding-top: 2px;
+        }
+
+        .edu-timeline {
+            width: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .edu-circle {
+            width: 12px;
+            height: 12px;
+            background-color: #000;
+            border-radius: 50%;
+            z-index: 2;
+        }
+
+        .edu-line {
+            width: 2px;
+            background-color: #000;
+            flex-grow: 1;
+            margin-top: -2px;
+            margin-bottom: -2px;
+        }
+
+        .edu-item:last-child .edu-line {
+            display: none;
+        }
+
+        .edu-details {
+            flex-grow: 1;
+            padding-left: 10px;
+            padding-bottom: 20px;
+        }
+
+        .edu-uni {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .edu-dates-right {
+            color: #777;
+            font-size: 8.5pt;
+        }
+
+        .edu-degree {
+            color: #555;
+            margin-top: 2px;
+        }
+
+        /* ================== COLUMNA DERECHA ================== */
+        .right-column {
+            width: 35%;
+            background-color: #e6e6e6;
+            padding: 35px 20px;
+        }
+
+        .section-right {
+            margin-bottom: 28px;
+            page-break-inside: avoid;
+        }
+
+        .title-right {
+            border-top: 8px solid #c01b2f;
+            padding-top: 10px;
+            margin-top: 0;
+            margin-bottom: 12px;
+            font-size: 10pt;
+            color: #444;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+
+        .right-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .right-list li {
+            margin-bottom: 10px;
+            position: relative;
+            padding-left: 18px;
+            font-size: 9pt;
+        }
+
+        .right-list li::before {
+            content: "➔";
+            position: absolute;
+            left: 0;
+            color: #000;
+            font-size: 9pt;
+        }
+
+        .idiomas-text {
+            font-size: 9pt;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="page-container">
+        <!-- LADO IZQUIERDO -->
+        <div class="left-column">
+            <div class="header">
+                <div class="header-left">
+                    <h1 style="font-size: 2rem; font-weight: bold;">{{ candidato.nombre }}</h1>
+                    <div class="exp-text">
+                        <span class="exp-label">Experiencia: </span>
+                        <span class="exp-value">{{ candidato.anos_experiencia }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="title-left">Experiencia Profesional</div>
+            {% for job in experiencia_profesional %}
+            <div class="job">
+                <div class="job-resumen">Resumen de posición en {{ job.compania }}</div>
+                <div class="job-title">{{ job.posicion }}</div>
+                <div class="job-meta">{{ job.compania }} / {{ job.fecha_inicio }} - {{
+                    job.fecha_fin }}</div>
+                <ul class="job-desc">
+                    <li>{{ job.descripcion }}</li>
+                </ul>
+            </div>
+            {% endfor %}
+
+            <div class="title-left">Educación</div>
+            <div class="edu-container">
+                {% for edu in educacion %}
+                <div class="edu-item">
+                    <div class="edu-date-left">{{ edu.fecha_inicio }} - {{ edu.fecha_fin }}</div>
+                    <div class="edu-timeline">
+                        <div class="edu-circle"></div>
+                        <div class="edu-line"></div>
+                    </div>
+                    <div class="edu-details">
+                        <span class="edu-uni">{{ edu.universidad }}</span> <span class="edu-dates-right">[{{
+                            edu.fecha_inicio }} - {{ edu.fecha_fin }}]</span>
+                        <div class="edu-degree">{{ edu.grado }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- LADO DERECHO -->
+        <div class="right-column">
+            <img src="Nfq_Logo.png" alt="Nfq" class="logo-img"
+                style="width: 180px; height: auto; display: block; margin: 0 auto 20px auto;">
+            <div class="section-right">
+                <div class="title-right">Complementos</div>
+                <ul class="right-list">
+                    {% for comp in complementos %}
+                    <li>{{ comp }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <div class="section-right">
+                <div class="title-right">Habilidades</div>
+                <ul class="right-list">
+                    {% for hab in habilidades %}
+                    <li>{{ hab }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <div class="section-right">
+                <div class="title-right">Experiencia</div>
+                <ul class="right-list">
+                    {% for skill in hard_skills %}
+                    <li>{{ skill }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <div class="section-right">
+                <div class="title-right">Idiomas</div>
+                {% for idioma in idiomas %}
+                <div class="idiomas-text">[{{ idioma }}]</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

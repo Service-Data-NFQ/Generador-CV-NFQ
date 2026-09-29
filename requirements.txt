@@ -1,0 +1,3 @@
+fastapi>=0.117,<1
+reportlab>=4.2,<5
+uvicorn>=0.30,<1
