@@ -467,9 +467,10 @@
                     const enlace = document.createElement('a');
                     enlace.href = nuevaUrl;
                     const nombreCandidato = String(cvData.candidato?.nombre || 'Candidato')
-                        .trim()
-                        .replace(/[<>:"/\\|?*\x00-\x1F]/g, '')
-                        .replace(/\s+/g, '_') || 'Candidato';
+                        .normalize('NFD')
+                        .replace(/[\u0300-\u036f]/g, '')
+                        .replace(/[^A-Za-z0-9]+/g, '_')
+                        .replace(/^_+|_+$/g, '') || 'Candidato';
                     enlace.download = `NFQ_CV_${nombreCandidato}.pdf`;
                     document.body.appendChild(enlace);
                     enlace.click();
