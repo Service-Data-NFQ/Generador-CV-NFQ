@@ -1,11 +1,12 @@
 """FastAPI: sirve la interfaz y genera CV en PDF directamente en memoria."""
 
+from hashlib import sha256
 from html import escape
 from io import BytesIO
 from pathlib import Path
 
-from fastapi import Body, FastAPI, HTTPException
-from fastapi.responses import FileResponse, Response
+from fastapi import Body, FastAPI, HTTPException, Request
+from fastapi.responses import Response
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_RIGHT
 from reportlab.lib.pagesizes import A4
@@ -278,8 +279,19 @@ def crear_pdf(data: dict) -> bytes:
 
 
 @app.get("/", include_in_schema=False)
-def index():
-    return FileResponse(BASE_DIR / "web" / "index.html", media_type="text/html")
+def index(request: Request):
+    html = (BASE_DIR / "web" / "index.html").read_bytes()
+    # La versión depende del contenido, no de la fecha de cada despliegue.
+    etag = f'"{sha256(html).hexdigest()}"'
+    headers = {"Cache-Control": "no-cache", "ETag": etag}
+    cached_versions = request.headers.get("if-none-match", "")
+    for version in cached_versions.split(","):
+        version = version.strip()
+        if version.startswith("W/"):
+            version = version[2:]
+        if version == "*" or version == etag:
+            return Response(status_code=304, headers=headers)
+    return Response(content=html, media_type="text/html", headers=headers)
 
 
 @app.post("/api/generar-pdf", response_class=Response)

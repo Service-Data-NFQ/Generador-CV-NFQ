@@ -102,12 +102,27 @@
             border-radius: 5px;
         }
 
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 8px;
+            margin-bottom: 15px;
+        }
+
         .section-title {
-            margin-top: 0;
+            margin: 0;
             font-size: 16px;
             text-transform: uppercase;
-            border-bottom: 1px solid #ccc;
-            margin-bottom: 15px;
+        }
+
+        .btn-agregar {
+            margin-right: 0;
+            padding: 7px 12px;
+            white-space: nowrap;
+            flex-shrink: 0;
         }
 
         .form-group {
@@ -264,7 +279,19 @@
 
         const SECCIONES_CON_CHECKBOX = ['experiencia_profesional', 'habilidades', 'hard_skills', 'complementos'];
 
+        const PLANTILLAS_BLOQUES = {
+            experiencia_profesional: { posicion: '', compania: '', modalidad: '', fecha_inicio: '', fecha_fin: '', descripcion: '', incluir: true },
+            complementos: { texto: '', incluir: true },
+            habilidades: { texto: '', incluir: true },
+            hard_skills: { texto: '', incluir: true },
+            educacion: { universidad: '', grado: '', fecha_inicio: '', fecha_fin: '' },
+            idiomas: ''
+        };
+
         function normalizarDatosListas(data) {
+            Object.keys(PLANTILLAS_BLOQUES).forEach(key => {
+                if (data[key] == null) data[key] = [];
+            });
             ['habilidades', 'hard_skills', 'complementos'].forEach(key => {
                 if (Array.isArray(data[key])) {
                     data[key] = data[key].map(item => {
@@ -292,8 +319,32 @@
             for (const key in data) {
                 const sectionDiv = document.createElement('div');
                 sectionDiv.className = 'section-form';
-                sectionDiv.innerHTML = `<h3 class="section-title">${key.replace(/_/g, ' ')}</h3>`;
                 const value = data[key];
+                const header = document.createElement('div');
+                header.className = 'section-header';
+                const title = document.createElement('h3');
+                title.className = 'section-title';
+                title.textContent = key.replace(/_/g, ' ');
+                header.appendChild(title);
+                sectionDiv.appendChild(header);
+
+                if (Array.isArray(value)) {
+                    const button = document.createElement('button');
+                    button.type = 'button';
+                    button.className = 'btn-secundario btn-agregar';
+                    button.textContent = 'Agregar bloque';
+                    button.onclick = () => {
+                        const template = PLANTILLAS_BLOQUES[key] ?? value.find(item => item && typeof item === 'object') ?? '';
+                        const newItem = typeof template === 'object'
+                            ? Object.fromEntries(Object.keys(template).map(field => [field, field === 'incluir' ? true : '']))
+                            : '';
+                        value.push(newItem);
+                        const block = createArrayItem(key, value, newItem, value.length - 1);
+                        sectionDiv.appendChild(block);
+                        block.querySelector('input:not([type="checkbox"]), textarea')?.focus();
+                    };
+                    header.appendChild(button);
+                }
 
                 if (typeof value === 'object' && !Array.isArray(value)) {
                     for (const subKey in value) {
@@ -301,44 +352,45 @@
                     }
                 } else if (Array.isArray(value)) {
                     value.forEach((item, index) => {
-                        const itemDiv = document.createElement('div');
-                        itemDiv.className = 'array-item';
-
-                        if (typeof item === 'object') {
-                            // Si la sección requiere checkbox (Experiencia, Habilidades, Hard Skills, Complementos)
-                            if (SECCIONES_CON_CHECKBOX.includes(key)) {
-                                if (item.incluir === undefined) item.incluir = true;
-
-                                const checkDiv = document.createElement('div');
-                                checkDiv.className = 'checkbox-container';
-
-                                const checkbox = document.createElement('input');
-                                checkbox.type = 'checkbox';
-                                checkbox.checked = item.incluir !== false;
-                                checkbox.onchange = (e) => {
-                                    item.incluir = e.target.checked;
-                                };
-
-                                const label = document.createElement('label');
-                                label.textContent = 'Mostrar en PDF';
-                                label.prepend(checkbox);
-
-                                checkDiv.appendChild(label);
-                                itemDiv.appendChild(checkDiv);
-                            }
-
-                            for (const subKey in item) {
-                                if (subKey === 'incluir') continue;
-                                itemDiv.appendChild(createInputGroup(subKey, item, subKey));
-                            }
-                        } else {
-                            itemDiv.appendChild(createInputGroup(`Item ${index + 1}`, value, index));
-                        }
-                        sectionDiv.appendChild(itemDiv);
+                        sectionDiv.appendChild(createArrayItem(key, value, item, index));
                     });
                 }
                 container.appendChild(sectionDiv);
             }
+        }
+
+        function createArrayItem(key, value, item, index) {
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'array-item';
+
+            if (item !== null && typeof item === 'object') {
+                if (SECCIONES_CON_CHECKBOX.includes(key)) {
+                    if (item.incluir === undefined) item.incluir = true;
+
+                    const checkDiv = document.createElement('div');
+                    checkDiv.className = 'checkbox-container';
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.checked = item.incluir !== false;
+                    checkbox.onchange = (e) => {
+                        item.incluir = e.target.checked;
+                    };
+
+                    const label = document.createElement('label');
+                    label.textContent = 'Mostrar en PDF';
+                    label.prepend(checkbox);
+                    checkDiv.appendChild(label);
+                    itemDiv.appendChild(checkDiv);
+                }
+
+                for (const subKey in item) {
+                    if (subKey === 'incluir') continue;
+                    itemDiv.appendChild(createInputGroup(subKey, item, subKey));
+                }
+            } else {
+                itemDiv.appendChild(createInputGroup(`Item ${index + 1}`, value, index));
+            }
+            return itemDiv;
         }
 
         function createInputGroup(label, objRef, key) {
@@ -414,7 +466,11 @@
                 if (descargar) {
                     const enlace = document.createElement('a');
                     enlace.href = nuevaUrl;
-                    enlace.download = 'CV.pdf';
+                    const nombreCandidato = String(cvData.candidato?.nombre || 'Candidato')
+                        .trim()
+                        .replace(/[<>:"/\\|?*\x00-\x1F]/g, '')
+                        .replace(/\s+/g, '_') || 'Candidato';
+                    enlace.download = `NFQ_CV_${nombreCandidato}.pdf`;
                     document.body.appendChild(enlace);
                     enlace.click();
                     enlace.remove();
