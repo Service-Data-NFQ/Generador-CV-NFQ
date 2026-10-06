@@ -201,8 +201,8 @@ def _right_story(data: dict) -> list:
             ]
         )
 
-    # 3. Hard Skills (Experiencia)
-    _section(story, "Experiencia", right=True)
+    # 3. Hard Skills
+    _section(story, "Hard Skills", right=True)
     for item in data.get("hard_skills") or []:
         incluir, texto = _debe_incluir(item)
         if incluir and texto:
