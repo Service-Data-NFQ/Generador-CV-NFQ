@@ -46,6 +46,14 @@
             margin-bottom: 20px;
             padding-bottom: 15px;
             border-bottom: 2px solid #eee;
+
+            /* --- Agrega estas líneas para fijar la barra --- */
+            position: sticky;
+            top: 0;
+            background: #fff;
+            z-index: 100;
+            padding-top: 10px;
+            /* Opcional: da un pequeño margen superior al hacer scroll */
         }
 
         .top-bar h2 {
@@ -131,9 +139,29 @@
         }
 
         .array-item {
+            position: relative;
             border-left: 3px solid #000;
             padding-left: 10px;
             margin-bottom: 15px;
+        }
+
+        /* Checkbox en el bloque de elementos */
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            margin-bottom: 10px;
+            font-size: 12px;
+            font-weight: bold;
+            color: #333;
+            gap: 6px;
+        }
+
+        .checkbox-container input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: #000;
         }
 
         /* Modal (Ventana flotante) */
@@ -198,8 +226,8 @@
             <div class="top-bar">
                 <h2>Datos del CV</h2>
                 <div>
-                    <!-- Nuevo Botón -->
                     <button class="btn-secundario" onclick="abrirModal()">Importar JSON</button>
+                    <button class="btn-secundario" onclick="generarCV(false)">Actualizar</button>
                     <button class="btn-crear" id="btn-crear" onclick="generarCV(true)">Descargar CV</button>
                 </div>
             </div>
@@ -212,20 +240,51 @@
     </div>
 
     <script>
-        // Cambié const por let para poder reescribir todo el objeto cuando pegamos un JSON nuevo
         let cvData = {
             "candidato": { "nombre": "Juan Pérez Hernández", "anos_experiencia": "5 años" },
             "experiencia_profesional": [
-                { "posicion": "Consultor Senior", "compania": "Nfq", "modalidad": "Híbrida", "fecha_inicio": "Enero 2022", "fecha_fin": "Presente", "descripcion": "Liderazgo en proyectos digitales." }
+                { "posicion": "Consultor Senior", "compania": "Nfq", "modalidad": "Híbrida", "fecha_inicio": "Enero 2022", "fecha_fin": "Presente", "descripcion": "Liderazgo en proyectos digitales.", "incluir": true }
             ],
-            "complementos": ["Certificación AWS"],
-            "habilidades": ["Liderazgo"],
-            "hard_skills": ["Python", "SQL"],
+            "complementos": [
+                { "texto": "Certificación AWS", "incluir": true }
+            ],
+            "habilidades": [
+                { "texto": "Liderazgo", "incluir": true }
+            ],
+            "hard_skills": [
+                { "texto": "Python", "incluir": true },
+                { "texto": "SQL", "incluir": true }
+            ],
             "educacion": [
                 { "universidad": "UNAM", "grado": "Ingeniería en Computación", "fecha_inicio": "2013", "fecha_fin": "2017" }
             ],
             "idiomas": ["Español - Nativo"]
         };
+
+
+        const SECCIONES_CON_CHECKBOX = ['experiencia_profesional', 'habilidades', 'hard_skills', 'complementos'];
+
+        function normalizarDatosListas(data) {
+            ['habilidades', 'hard_skills', 'complementos'].forEach(key => {
+                if (Array.isArray(data[key])) {
+                    data[key] = data[key].map(item => {
+                        if (typeof item === 'string' || typeof item === 'number') {
+                            return { "texto": String(item), "incluir": true };
+                        } else if (typeof item === 'object' && item !== null) {
+                            if (item.incluir === undefined) item.incluir = true;
+                            if (item.texto === undefined) item.texto = item.nombre || item.valor || '';
+                            return item;
+                        }
+                        return item;
+                    });
+                }
+            });
+            if (Array.isArray(data.experiencia_profesional)) {
+                data.experiencia_profesional.forEach(job => {
+                    if (job.incluir === undefined) job.incluir = true;
+                });
+            }
+        }
 
         function renderForm(data) {
             const container = document.getElementById('form-container');
@@ -244,8 +303,34 @@
                     value.forEach((item, index) => {
                         const itemDiv = document.createElement('div');
                         itemDiv.className = 'array-item';
+
                         if (typeof item === 'object') {
-                            for (const subKey in item) { itemDiv.appendChild(createInputGroup(subKey, item, subKey)); }
+                            // Si la sección requiere checkbox (Experiencia, Habilidades, Hard Skills, Complementos)
+                            if (SECCIONES_CON_CHECKBOX.includes(key)) {
+                                if (item.incluir === undefined) item.incluir = true;
+
+                                const checkDiv = document.createElement('div');
+                                checkDiv.className = 'checkbox-container';
+
+                                const checkbox = document.createElement('input');
+                                checkbox.type = 'checkbox';
+                                checkbox.checked = item.incluir !== false;
+                                checkbox.onchange = (e) => {
+                                    item.incluir = e.target.checked;
+                                };
+
+                                const label = document.createElement('label');
+                                label.textContent = 'Mostrar en PDF';
+                                label.prepend(checkbox);
+
+                                checkDiv.appendChild(label);
+                                itemDiv.appendChild(checkDiv);
+                            }
+
+                            for (const subKey in item) {
+                                if (subKey === 'incluir') continue;
+                                itemDiv.appendChild(createInputGroup(subKey, item, subKey));
+                            }
                         } else {
                             itemDiv.appendChild(createInputGroup(`Item ${index + 1}`, value, index));
                         }
@@ -264,18 +349,18 @@
             const isLong = label.toLowerCase() === 'descripcion' || (typeof objRef[key] === 'string' && objRef[key].length > 50);
             const input = document.createElement(isLong ? 'textarea' : 'input');
             if (!isLong) input.type = 'text';
-            input.value = objRef[key];
+            input.value = objRef[key] !== undefined ? objRef[key] : '';
 
-            input.oninput = (e) => { objRef[key] = e.target.value; };
+            input.oninput = (e) => {
+                objRef[key] = e.target.value;
+            };
 
             group.appendChild(input);
             return group;
         }
 
-        // --- NUEVAS FUNCIONES PARA EL MODAL JSON ---
         function abrirModal() {
             document.getElementById('json-modal').style.display = 'flex';
-            // Opcional: pre-cargar el JSON actual en la caja de texto para verlo
             document.getElementById('json-textarea').value = JSON.stringify(cvData, null, 2);
         }
 
@@ -286,30 +371,25 @@
         function cargarJSON() {
             const jsonText = document.getElementById('json-textarea').value;
             try {
-                // Intentamos convertir el texto pegado en un objeto JavaScript
                 const newData = JSON.parse(jsonText);
-
-                // Actualizamos los datos principales
+                normalizarDatosListas(newData);
                 cvData = newData;
 
-                // 1. Redibujamos todas las cajas de texto de la izquierda
                 renderForm(cvData);
-
-                // 2. Cerramos la ventana flotante
                 cerrarModal();
-
-                // 3. Mandamos a regenerar el PDF inmediatamente
                 generarCV(false);
 
             } catch (error) {
-                // Si el usuario pega algo mal escrito (falta una coma o comillas)
                 alert("Hubo un error leyendo el JSON. Verifica que la sintaxis sea correcta.\n\nDetalle: " + error.message);
             }
         }
-        // -------------------------------------------
 
         let pdfPreviewUrl = null;
-        window.onload = () => { renderForm(cvData); generarCV(false); };
+        window.onload = () => {
+            normalizarDatosListas(cvData);
+            renderForm(cvData);
+            generarCV(false);
+        };
 
         async function generarCV(descargar) {
             const btn = document.getElementById('btn-crear');
